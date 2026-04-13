@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 
+interface Source {
+  page: number;
+  file: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 }
 
 export default function Home() {
@@ -21,7 +27,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/ask", {
+      const response = await fetch("https://site-agent.onrender.com/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input }),
@@ -30,6 +36,7 @@ export default function Home() {
       const assistantMessage: Message = {
         role: "assistant",
         content: data.answer,
+        sources: data.sources,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
@@ -42,6 +49,18 @@ export default function Home() {
     }
   };
 
+  const downloadPdf = async (filename: string) => {
+    const response = await fetch(
+      `https://site-agent.onrender.com/download/${filename}`,
+    );
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       {/* 헤더 */}
@@ -49,7 +68,6 @@ export default function Home() {
         현장 안전수칙 AI 에이전트
       </header>
 
-      {/* 채팅 메시지 영역 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 mt-10">
@@ -67,6 +85,18 @@ export default function Home() {
                   : "bg-white text-gray-800 shadow"
               }`}>
               {msg.content}
+              {msg.sources && msg.sources.length > 0 && (
+                <div className="mt-2 text-xs text-gray-400">
+                  {msg.sources.map((source, i) => (
+                    <button
+                      key={i}
+                      onClick={() => downloadPdf(source.file)}
+                      className="underline">
+                      📄 {source.file} {source.page}페이지
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
