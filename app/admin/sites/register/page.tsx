@@ -1,15 +1,16 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SiteRegisterPage() {
+function SiteRegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
-  const siteId = searchParams.get("siteId"); // 수정 모드 여부
-  const isEditMode = !!siteId; // siteId 있으면 수정 모드
+  const siteId = searchParams.get("siteId");
+  const isEditMode = !!siteId;
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -21,7 +22,6 @@ export default function SiteRegisterPage() {
   const [managerName, setManagerName] = useState("");
   const [managerPhone, setManagerPhone] = useState("");
 
-  // 역지오코딩 (등록 모드에서만)
   useEffect(() => {
     if (!lat || !lng || isEditMode) return;
     window.kakao?.maps.load(() => {
@@ -38,7 +38,6 @@ export default function SiteRegisterPage() {
     });
   }, [lat, lng]);
 
-  // 수정 모드면 기존 데이터 불러오기
   useEffect(() => {
     if (!isEditMode) return;
     const token = localStorage.getItem("token");
@@ -52,10 +51,9 @@ export default function SiteRegisterPage() {
       });
   }, [siteId]);
 
-  // 등록 or 수정
   const handleSubmit = async () => {
     if (!name) return;
-    if (!isEditMode && !file) return; // 등록 모드는 PDF 필수
+    if (!isEditMode && !file) return;
     setLoading(true);
 
     const formData = new FormData();
@@ -63,11 +61,11 @@ export default function SiteRegisterPage() {
     formData.append("address", address);
     formData.append("lat", lat || "0");
     formData.append("lng", lng || "0");
-    if (file) formData.append("file", file); // PDF는 있을 때만
+    if (file) formData.append("file", file);
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
+      await fetch(
         `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites${isEditMode ? `/${siteId}` : ""}`,
         {
           method: isEditMode ? "PUT" : "POST",
@@ -84,7 +82,6 @@ export default function SiteRegisterPage() {
     }
   };
 
-  // 삭제
   const handleDelete = async () => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     const token = localStorage.getItem("token");
@@ -156,7 +153,7 @@ export default function SiteRegisterPage() {
             <input
               value={managerName}
               onChange={(e) => setManagerName(e.target.value)}
-              className="..."
+              className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
           <div>
@@ -166,7 +163,7 @@ export default function SiteRegisterPage() {
             <input
               value={managerPhone}
               onChange={(e) => setManagerPhone(e.target.value)}
-              className="..."
+              className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
           <div>
@@ -178,7 +175,6 @@ export default function SiteRegisterPage() {
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
-
           <div>
             <label className="text-sm font-medium text-gray-700">위치</label>
             <p className="text-xs text-gray-400 mt-1">
@@ -201,7 +197,6 @@ export default function SiteRegisterPage() {
               className="w-full border rounded-lg p-2 mt-1 text-sm"
             />
           </div>
-
           <div className="flex justify-center gap-3">
             {isEditMode && (
               <button
@@ -217,12 +212,24 @@ export default function SiteRegisterPage() {
               {loading ? "처리 중..." : isEditMode ? "수정하기" : "현장 등록"}
             </button>
           </div>
-
           {message && (
             <p className="text-center text-sm text-green-600">{message}</p>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SiteRegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen text-gray-500">
+          로딩 중...
+        </div>
+      }>
+      <SiteRegisterForm />
+    </Suspense>
   );
 }

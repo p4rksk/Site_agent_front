@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function KakaoCallback() {
+function KakaoCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -11,7 +12,6 @@ export default function KakaoCallback() {
     const code = searchParams.get("code");
     if (!code) return;
 
-    // Spring Boot에 코드 전달 → JWT 받기
     fetch(`${process.env.NEXT_PUBLIC_SPRING_URL}/auth/kakao?code=${code}`)
       .then((res) => res.json())
       .then((data) => {
@@ -29,5 +29,18 @@ export default function KakaoCallback() {
     <div className="flex items-center justify-center h-screen">
       <p className="text-gray-500">로그인 처리 중...</p>
     </div>
+  );
+}
+
+export default function KakaoCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen text-gray-500">
+          로딩 중...
+        </div>
+      }>
+      <KakaoCallbackInner />
+    </Suspense>
   );
 }
