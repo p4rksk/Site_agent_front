@@ -43,8 +43,48 @@ export default function Home() {
   const [signupCompanyName, setSignupCompanyName] = useState("");
   const [signupAdminId, setSignupAdminId] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupSiteAdminId, setSignupSiteAdminId] = useState("");
+  const [signupSiteAdminPassword, setSignupSiteAdminPassword] = useState("");
   const [signupBusinessNumber, setSignupBusinessNumber] = useState("");
   const [signupContact, setSignupContact] = useState("");
+
+  // 관리자 아이디 중복체크
+  const [idCheckMessage, setIdCheckMessage] = useState("");
+  const [isIdAvailable, setIsIdAvailable] = useState(false);
+
+  // 현장관리자 아이디 중복체크
+  const [siteIdCheckMessage, setSiteIdCheckMessage] = useState("");
+  const [isSiteIdAvailable, setIsSiteIdAvailable] = useState(false);
+
+  const checkAdminId = async (adminId: string) => {
+    if (!adminId) return;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/check-id?loginId=${adminId}`,
+    );
+    const isDuplicate = await res.json();
+    if (isDuplicate) {
+      setIdCheckMessage("이미 사용중인 아이디입니다.");
+      setIsIdAvailable(false);
+    } else {
+      setIdCheckMessage("사용 가능한 아이디입니다.");
+      setIsIdAvailable(true);
+    }
+  };
+
+  const checkSiteAdminId = async (siteAdminId: string) => {
+    if (!siteAdminId) return;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/check-site-id?loginId=${siteAdminId}`,
+    );
+    const isDuplicate = await res.json();
+    if (isDuplicate) {
+      setSiteIdCheckMessage("이미 사용중인 아이디입니다.");
+      setIsSiteIdAvailable(false);
+    } else {
+      setSiteIdCheckMessage("사용 가능한 아이디입니다.");
+      setIsSiteIdAvailable(true);
+    }
+  };
 
   const router = useRouter();
 
@@ -139,15 +179,15 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            adminId: loginAdminId,
+            loginId: loginAdminId,
             password: loginPassword,
           }),
         },
       );
       const data = await res.json();
       localStorage.setItem("token", data.token);
-      localStorage.setItem("role", "admin");
-      setRole("admin");
+      localStorage.setItem("role", data.role);
+      setRole(data.role);
       setShowLoginPopup(false);
     } catch {
       alert("로그인에 실패했습니다.");
@@ -155,6 +195,10 @@ export default function Home() {
   };
 
   const handleAdminSignup = async () => {
+    if (!isIdAvailable) return alert("관리자 아이디 중복체크를 해주세요.");
+    if (!isSiteIdAvailable)
+      return alert("현장관리자 아이디 중복체크를 해주세요.");
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/signup`,
@@ -163,10 +207,12 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             companyName: signupCompanyName,
-            businessNumber: signupBusinessNumber, // ✅ 사업자 번호 추가
-            contact: signupContact,
+            businessNumber: signupBusinessNumber,
+            phone: signupContact,
             adminId: signupAdminId,
-            password: signupPassword,
+            adminPassword: signupPassword,
+            siteAdminId: signupSiteAdminId,
+            siteAdminPassword: signupSiteAdminPassword,
           }),
         },
       );
@@ -175,7 +221,18 @@ export default function Home() {
         setSignupCompanyName("");
         setSignupAdminId("");
         setSignupPassword("");
+        setSignupSiteAdminId("");
+        setSignupSiteAdminPassword("");
+        setSignupBusinessNumber("");
+        setSignupContact("");
+        setIdCheckMessage("");
+        setSiteIdCheckMessage("");
+        setIsIdAvailable(false);
+        setIsSiteIdAvailable(false);
         setModalView("adminLogin");
+      } else {
+        const msg = await res.text();
+        alert(msg);
       }
     } catch {
       alert("회원가입에 실패했습니다.");
@@ -303,19 +360,59 @@ export default function Home() {
                   placeholder="회사 연락처"
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 />
+
+                <p className="text-xs text-gray-400 self-start font-semibold">
+                  회사 관리자 계정
+                </p>
                 <input
                   value={signupAdminId}
-                  onChange={(e) => setSignupAdminId(e.target.value)}
-                  placeholder="아이디"
+                  onChange={(e) => {
+                    setSignupAdminId(e.target.value);
+                    checkAdminId(e.target.value);
+                  }}
+                  placeholder="관리자 아이디"
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 />
+                {idCheckMessage && (
+                  <span
+                    className={`text-xs self-start ${isIdAvailable ? "text-blue-500" : "text-red-500"}`}>
+                    {idCheckMessage}
+                  </span>
+                )}
                 <input
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
-                  placeholder="비밀번호"
+                  placeholder="관리자 비밀번호"
                   type="password"
                   className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 />
+
+                <p className="text-xs text-gray-400 self-start font-semibold">
+                  현장 관리자 계정
+                </p>
+                <input
+                  value={signupSiteAdminId}
+                  onChange={(e) => {
+                    setSignupSiteAdminId(e.target.value);
+                    checkSiteAdminId(e.target.value);
+                  }}
+                  placeholder="현장관리자 아이디"
+                  className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+                />
+                {siteIdCheckMessage && (
+                  <span
+                    className={`text-xs self-start ${isSiteIdAvailable ? "text-blue-500" : "text-red-500"}`}>
+                    {siteIdCheckMessage}
+                  </span>
+                )}
+                <input
+                  value={signupSiteAdminPassword}
+                  onChange={(e) => setSignupSiteAdminPassword(e.target.value)}
+                  placeholder="현장관리자 비밀번호"
+                  type="password"
+                  className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+                />
+
                 <button
                   onClick={handleAdminSignup}
                   className="w-full bg-blue-500 text-white py-3 rounded-xl font-bold text-sm">
