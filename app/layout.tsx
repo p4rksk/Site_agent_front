@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import LogoutButton from "./components/LogoutButton";
 
 export const metadata: Metadata = {
   title: "현장 AI 에이전트",
@@ -20,7 +21,10 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body suppressHydrationWarning={true}>{children}</body>
+      <body suppressHydrationWarning={true}>
+        {" "}
+        <LogoutButton /> {children}
+      </body>
     </html>
   );
 }

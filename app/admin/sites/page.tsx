@@ -17,8 +17,6 @@ function SiteRegisterForm() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [adminId, setAdminId] = useState("");
-  const [adminPw, setAdminPw] = useState("");
   const [managerName, setManagerName] = useState("");
   const [managerPhone, setManagerPhone] = useState("");
 
@@ -53,7 +51,6 @@ function SiteRegisterForm() {
 
   const handleSubmit = async () => {
     if (!name) return;
-    if (!isEditMode && !file) return;
     setLoading(true);
 
     const formData = new FormData();
@@ -61,6 +58,8 @@ function SiteRegisterForm() {
     formData.append("address", address);
     formData.append("lat", lat || "0");
     formData.append("lng", lng || "0");
+    formData.append("managerName", managerName);
+    formData.append("managerPhone", managerPhone);
     if (file) formData.append("file", file);
 
     try {
@@ -74,7 +73,7 @@ function SiteRegisterForm() {
         },
       );
       setMessage(isEditMode ? "수정되었습니다!" : "현장이 등록되었습니다!");
-      setTimeout(() => router.push("/admin"), 1500);
+      setTimeout(() => router.push("/"), 150);
     } catch {
       setMessage(isEditMode ? "수정에 실패했습니다." : "등록에 실패했습니다.");
     } finally {
@@ -94,7 +93,7 @@ function SiteRegisterForm() {
         },
       );
       setMessage("삭제되었습니다.");
-      setTimeout(() => router.push("/admin"), 1500);
+      setTimeout(() => router.push("/"), 150);
     } catch {
       setMessage("삭제에 실패했습니다.");
     }
@@ -121,28 +120,6 @@ function SiteRegisterForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="현장명을 입력하세요"
-              className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              관리자 아이디 *
-            </label>
-            <input
-              value={adminId}
-              onChange={(e) => setAdminId(e.target.value)}
-              placeholder="관리자 아이디를 입력하세요"
-              className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              관리자 비밀번호 *
-            </label>
-            <input
-              value={adminPw}
-              onChange={(e) => setAdminPw(e.target.value)}
-              placeholder="관리자 비밀번호를 입력하세요"
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
@@ -207,7 +184,7 @@ function SiteRegisterForm() {
             )}
             <button
               onClick={handleSubmit}
-              disabled={!name || (!isEditMode && !file) || loading}
+              disabled={!name || loading}
               className="px-8 py-3 bg-blue-500 text-white rounded-xl text-sm">
               {loading ? "처리 중..." : isEditMode ? "수정하기" : "현장 등록"}
             </button>

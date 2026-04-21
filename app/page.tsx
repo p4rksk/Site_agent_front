@@ -36,8 +36,8 @@ export default function Home() {
   >("kakao");
 
   // 로그인용
-  const [loginAdminId, setLoginAdminId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [loginAdminId, setLoginAdminId] = useState("hyundai_admin");
+  const [loginPassword, setLoginPassword] = useState("password123");
 
   // 회원가입용
   const [signupCompanyName, setSignupCompanyName] = useState("");
@@ -155,7 +155,7 @@ export default function Home() {
         });
       });
 
-      if (role === "admin") {
+      if (role === "SUPER_ADMIN") {
         window.kakao.maps.event.addListener(map, "click", (mouseEvent: any) => {
           const lat = mouseEvent.latLng.getLat();
           const lng = mouseEvent.latLng.getLng();
@@ -184,10 +184,19 @@ export default function Home() {
           }),
         },
       );
+
+      if (!res.ok) {
+        const msg = await res.text();
+        return alert(msg);
+      }
+
       const data = await res.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
+      localStorage.setItem("id", data.id);
+      localStorage.setItem("companyName", data.companyName);
       setRole(data.role);
+      alert(`${data.companyName} 로그인 성공!`);
       setShowLoginPopup(false);
     } catch {
       alert("로그인에 실패했습니다.");
@@ -445,7 +454,7 @@ export default function Home() {
                 onClick={() => {
                   setShowRegisterPopup(false);
                   router.push(
-                    `/admin/sites/register?lat=${selectedPos.lat}&lng=${selectedPos.lng}`,
+                    `/admin/sites?lat=${selectedPos.lat}&lng=${selectedPos.lng}`,
                   );
                 }}
                 className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm">
