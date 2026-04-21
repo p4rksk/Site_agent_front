@@ -15,8 +15,25 @@ interface Site {
   address: string;
   lat: number;
   lng: number;
-  distance: number;
+  distance: String;
 }
+
+const getDistance = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): string => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+};
 
 export default function Home() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -113,39 +130,44 @@ export default function Home() {
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
 
-    navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
       const map = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(latitude, longitude),
         level: 5,
       });
 
+      // 내 위치 마커
       new window.kakao.maps.Marker({
         map,
         position: new window.kakao.maps.LatLng(latitude, longitude),
       });
 
-      const mockSites: Site[] = [
+      // 실제 DB 데이터 가져오기
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites`,
         {
-          id: 1,
-          name: "A현장",
-          address: "부산광역시 부산진구",
-          lat: latitude + 0.01,
-          lng: longitude + 0.01,
-          distance: 1.2,
+          headers: { Authorization: `Bearer ${token}` },
         },
-        {
-          id: 2,
-          name: "B현장",
-          address: "부산광역시 금정구",
-          lat: latitude + 0.02,
-          lng: longitude - 0.01,
-          distance: 2.5,
-        },
-      ];
-      setSites(mockSites);
+      );
+      const data = await res.json();
 
-      mockSites.forEach((site) => {
+      // 내 위치 기준으로 거리 계산 (카카오맵 내장 함수)
+      const sitesWithDistance: Site[] = data.map((site: Site) => ({
+        ...site,
+        distance: getDistance(latitude, longitude, site.lat, site.lng),
+      }));
+
+      // 거리순 정렬
+      sitesWithDistance.sort(
+        (a, b) =>
+          parseFloat(a.distance as string) - parseFloat(b.distance as string),
+      );
+      setSites(sitesWithDistance);
+
+      // 현장 마커 표시
+      sitesWithDistance.forEach((site) => {
         const marker = new window.kakao.maps.Marker({
           map,
           position: new window.kakao.maps.LatLng(site.lat, site.lng),
@@ -471,7 +493,7 @@ export default function Home() {
             <p className="text-xs text-gray-400">
               근처 현장 ({sites.length}개)
             </p>
-            {role === "admin" && (
+            {role === "SUPER_ADMIN" && (
               <button
                 onClick={() => router.push("/admin/chatlogs")}
                 className="text-xs text-blue-500">
