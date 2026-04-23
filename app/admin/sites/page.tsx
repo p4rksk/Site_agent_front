@@ -19,9 +19,17 @@ function SiteRegisterForm() {
   const [message, setMessage] = useState("");
   const [managerName, setManagerName] = useState("");
   const [managerPhone, setManagerPhone] = useState("");
+  const [pdfs, setPdfs] = useState<
+    { id: number; fileName: string; filePath: string }[]
+  >([]);
+
+  const searchParamLat = searchParams.get("lat"); // 등록 모드용
+  const searchParamLng = searchParams.get("lng");
+  const [latState, setLatState] = useState(searchParamLat || "");
+  const [lngState, setLngState] = useState(searchParamLng || "");
 
   useEffect(() => {
-    if (!lat || !lng || isEditMode) return;
+    if (!searchParamLat || !searchParamLng || isEditMode) return;
     window.kakao?.maps.load(() => {
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.coord2Address(
@@ -46,6 +54,11 @@ function SiteRegisterForm() {
       .then((data) => {
         setName(data.name);
         setAddress(data.address);
+        setManagerName(data.managerName);
+        setManagerPhone(data.managerPhone);
+        setLatState(String(data.lat));
+        setLngState(String(data.lng));
+        setPdfs(data.pdfs);
       });
   }, [siteId]);
 
@@ -56,8 +69,8 @@ function SiteRegisterForm() {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("address", address);
-    formData.append("lat", lat || "0");
-    formData.append("lng", lng || "0");
+    formData.append("lat", latState || "0");
+    formData.append("lng", lngState || "0");
     formData.append("managerName", managerName);
     formData.append("managerPhone", managerPhone);
     if (file) formData.append("file", file);
@@ -155,17 +168,26 @@ function SiteRegisterForm() {
           <div>
             <label className="text-sm font-medium text-gray-700">위치</label>
             <p className="text-xs text-gray-400 mt-1">
-              위도: {lat} / 경도: {lng}
+              위도: {latState} / 경도: {lngState}
             </p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700">
               PDF 업로드 {!isEditMode && "*"}
             </label>
-            {isEditMode && (
-              <p className="text-xs text-gray-400 mt-1">
-                파일 선택 시 PDF가 추가 등록됩니다
-              </p>
+            {isEditMode && pdfs.length > 0 && (
+              <div className="mt-1">
+                <label className="text-sm font-medium text-gray-700">
+                  등록된 PDF:
+                </label>
+                {pdfs.map((pdf) => (
+                  <div
+                    key={pdf.id}
+                    className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-gray-500">{pdf.fileName}</p>
+                  </div>
+                ))}
+              </div>
             )}
             <input
               type="file"

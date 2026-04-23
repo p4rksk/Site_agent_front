@@ -34,7 +34,8 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-    const userMessage: Message = { role: "user", content: input };
+    const currentInput = input;
+    const userMessage: Message = { role: "user", content: currentInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
@@ -43,12 +44,17 @@ export default function ChatPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: input }),
+        body: JSON.stringify({
+          question: currentInput,
+          site_id: Number(siteId),
+        }),
       });
       const data = await res.json();
+      const answer = data.answer;
+
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.answer, sources: data.sources },
+        { role: "assistant", content: answer, sources: data.sources },
       ]);
     } catch {
       setMessages((prev) => [

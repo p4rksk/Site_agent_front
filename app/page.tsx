@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Settings, MessageCircle } from "lucide-react";
+import Link from "next/link";
 
 declare global {
   interface Window {
@@ -504,13 +506,28 @@ export default function Home() {
           {sites.map((site) => (
             <div
               key={site.id}
-              onClick={() => router.push(`/chat/${site.id}`)}
-              className="flex justify-between items-center py-3 border-b last:border-0 cursor-pointer">
-              <div>
+              className="flex justify-between items-center py-3 border-b last:border-0">
+              <Link
+                href={`/admin/sites?siteId=${site.id}`}
+                className="flex-1 cursor-pointer">
                 <p className="font-semibold text-sm">{site.name}</p>
                 <p className="text-xs text-gray-400">{site.address}</p>
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-blue-500">{site.distance}km</span>
+                {(role === "SUPER_ADMIN" || role === "SITE_ADMIN") && (
+                  <button
+                    onClick={() =>
+                      router.push(`/admin/sites?siteId=${site.id}`)
+                    }>
+                    <Settings size={16} />
+                  </button>
+                )}
+                <button onClick={() => router.push(`/chat/${site.id}`)}>
+                  <MessageCircle size={16} />
+                </button>
               </div>
-              <span className="text-xs text-blue-500">{site.distance}km</span>
             </div>
           ))}
         </div>
