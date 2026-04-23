@@ -54,7 +54,11 @@ export default function ChatPage() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: answer, sources: data.sources },
+        {
+          role: "assistant",
+          content: data.answer ?? "등록된 PDF가 없습니다.",
+          sources: data.sources,
+        },
       ]);
     } catch {
       setMessages((prev) => [
