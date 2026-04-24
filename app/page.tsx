@@ -132,68 +132,86 @@ export default function Home() {
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
 
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const map = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(latitude, longitude),
-        level: 5,
-      });
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const map = new window.kakao.maps.Map(mapRef.current, {
+          center: new window.kakao.maps.LatLng(latitude, longitude),
+          level: 5,
+        });
 
-      // 내 위치 마커
-      new window.kakao.maps.Marker({
-        map,
-        position: new window.kakao.maps.LatLng(latitude, longitude),
-      });
-
-      const token = localStorage.getItem("token");
-      const role = localStorage.getItem("role");
-
-      const url =
-        role === "USER"
-          ? `${process.env.NEXT_PUBLIC_SPRING_URL}/user/sites`
-          : `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const siteList = Array.isArray(data)
-        ? data
-        : (data.data ?? data.content ?? []);
-
-      // 내 위치 기준으로 거리 계산 (카카오맵 내장 함수)
-      const sitesWithDistance: Site[] = siteList.map((site: Site) => ({
-        ...site,
-        distance: getDistance(latitude, longitude, site.lat, site.lng),
-      }));
-
-      // 거리순 정렬
-      sitesWithDistance.sort(
-        (a, b) =>
-          parseFloat(a.distance as string) - parseFloat(b.distance as string),
-      );
-      setSites(sitesWithDistance);
-
-      // 현장 마커 표시
-      sitesWithDistance.forEach((site) => {
-        const marker = new window.kakao.maps.Marker({
+        // 내 위치 마커
+        new window.kakao.maps.Marker({
           map,
-          position: new window.kakao.maps.LatLng(site.lat, site.lng),
+          position: new window.kakao.maps.LatLng(latitude, longitude),
         });
-        window.kakao.maps.event.addListener(marker, "click", () => {
-          router.push(`/chat/${site.id}`);
-        });
-      });
 
-      if (role === "SUPER_ADMIN") {
-        window.kakao.maps.event.addListener(map, "click", (mouseEvent: any) => {
-          const lat = mouseEvent.latLng.getLat();
-          const lng = mouseEvent.latLng.getLng();
-          setSelectedPos({ lat, lng });
-          setShowRegisterPopup(true);
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const role = localStorage.getItem("role");
+
+        const url =
+          role === "USER"
+            ? `${process.env.NEXT_PUBLIC_SPRING_URL}/user/sites`
+            : `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites`;
+
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-      }
-    });
+        const data = await res.json();
+        const siteList = Array.isArray(data)
+          ? data
+          : (data.data ?? data.content ?? []);
+
+        // 내 위치 기준으로 거리 계산 (카카오맵 내장 함수)
+        const sitesWithDistance: Site[] = siteList.map((site: Site) => ({
+          ...site,
+          distance: getDistance(latitude, longitude, site.lat, site.lng),
+        }));
+
+        // 거리순 정렬
+        sitesWithDistance.sort(
+          (a, b) =>
+            parseFloat(a.distance as string) - parseFloat(b.distance as string),
+        );
+        setSites(sitesWithDistance);
+
+        // 현장 마커 표시
+        sitesWithDistance.forEach((site) => {
+          const marker = new window.kakao.maps.Marker({
+            map,
+            position: new window.kakao.maps.LatLng(site.lat, site.lng),
+          });
+          window.kakao.maps.event.addListener(marker, "click", () => {
+            router.push(`/chat/${site.id}`);
+          });
+        });
+
+        if (role === "SUPER_ADMIN") {
+          window.kakao.maps.event.addListener(
+            map,
+            "click",
+            (mouseEvent: any) => {
+              const lat = mouseEvent.latLng.getLat();
+              const lng = mouseEvent.latLng.getLng();
+              setSelectedPos({ lat, lng });
+              setShowRegisterPopup(true);
+            },
+          );
+        }
+      },
+      (error) => {
+        // 위치 권한 거부 시
+        alert(
+          "위치 권한이 필요합니다. 브라우저 설정에서 위치 권한을 허용해주세요.",
+        );
+        // 기본 위치(부산)로 지도 표시
+        const map = new window.kakao.maps.Map(mapRef.current, {
+          center: new window.kakao.maps.LatLng(35.1796, 129.0756),
+          level: 5,
+        });
+      },
+    );
   }, [mapLoaded, role]);
 
   const handleKakaoLogin = () => {
