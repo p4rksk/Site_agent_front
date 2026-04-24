@@ -18,7 +18,8 @@ export default function LogoutButton() {
       onClick={() => {
         localStorage.clear();
         setRole(null);
-        router.push("/");
+        router.refresh(); // ← push("/") 대신 refresh()
+        window.location.href = "/"; // ← 강제 새로고침
       }}
       className="absolute top-4 right-4 z-50 bg-white px-3 py-2 rounded-xl text-sm shadow-md text-gray-600 font-semibold">
       로그아웃

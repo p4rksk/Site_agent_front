@@ -12,16 +12,20 @@ function KakaoCallbackInner() {
     const code = searchParams.get("code");
     if (!code) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_SPRING_URL}/auth/kakao?code=${code}`)
+    fetch(`${process.env.NEXT_PUBLIC_SPRING_URL}/user/kakao-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    })
       .then((res) => res.json())
       .then((data) => {
         localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        if (data.role === "admin") {
-          router.push("/admin");
-        } else {
-          router.push("/");
-        }
+        localStorage.setItem("role", "USER");
+        router.push("/");
+      })
+      .catch((err) => {
+        console.error("카카오 로그인 실패:", err);
+        router.push("/");
       });
   }, []);
 

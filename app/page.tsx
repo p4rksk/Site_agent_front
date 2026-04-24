@@ -145,18 +145,24 @@ export default function Home() {
         position: new window.kakao.maps.LatLng(latitude, longitude),
       });
 
-      // 실제 DB 데이터 가져오기
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const role = localStorage.getItem("role");
+
+      const url =
+        role === "USER"
+          ? `${process.env.NEXT_PUBLIC_SPRING_URL}/user/sites`
+          : `${process.env.NEXT_PUBLIC_SPRING_URL}/admin/sites`;
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
+      const siteList = Array.isArray(data)
+        ? data
+        : (data.data ?? data.content ?? []);
 
       // 내 위치 기준으로 거리 계산 (카카오맵 내장 함수)
-      const sitesWithDistance: Site[] = data.map((site: Site) => ({
+      const sitesWithDistance: Site[] = siteList.map((site: Site) => ({
         ...site,
         distance: getDistance(latitude, longitude, site.lat, site.lng),
       }));
