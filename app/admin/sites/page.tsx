@@ -28,6 +28,22 @@ function SiteRegisterForm() {
   const [latState, setLatState] = useState(searchParamLat || "");
   const [lngState, setLngState] = useState(searchParamLng || "");
 
+  const [role, setRole] = useState<string | null>(null);
+  const isReadOnly = role === "USER";
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      setRole(localStorage.getItem("role"));
+    };
+
+    checkLoginStatus();
+    window.addEventListener("loginStatusChanged", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", checkLoginStatus);
+    };
+  }, []);
+
   useEffect(() => {
     if (!searchParamLat || !searchParamLng || isEditMode) return;
     window.kakao?.maps.load(() => {
@@ -63,7 +79,7 @@ function SiteRegisterForm() {
   }, [siteId]);
 
   const handleSubmit = async () => {
-    if (!name) return;
+    if (!name || isReadOnly) return;
     setLoading(true);
 
     const formData = new FormData();
@@ -95,6 +111,7 @@ function SiteRegisterForm() {
   };
 
   const handleDelete = async () => {
+    if (isReadOnly) return;
     if (!confirm("정말 삭제하시겠습니까?")) return;
     const token = localStorage.getItem("token");
     try {
@@ -119,7 +136,7 @@ function SiteRegisterForm() {
           ←
         </button>
         <h1 className="font-bold text-sm">
-          {isEditMode ? "현장 수정" : "현장 등록"}
+          {isReadOnly ? "현장 정보" : isEditMode ? "현장 수정" : "현장 등록"}
         </h1>
       </header>
 
@@ -133,6 +150,7 @@ function SiteRegisterForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="현장명을 입력하세요"
+              disabled={isReadOnly}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
@@ -143,6 +161,7 @@ function SiteRegisterForm() {
             <input
               value={managerName}
               onChange={(e) => setManagerName(e.target.value)}
+              disabled={isReadOnly}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
@@ -153,6 +172,7 @@ function SiteRegisterForm() {
             <input
               value={managerPhone}
               onChange={(e) => setManagerPhone(e.target.value)}
+              disabled={isReadOnly}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
@@ -162,6 +182,7 @@ function SiteRegisterForm() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="주소를 입력하세요"
+              disabled={isReadOnly}
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm outline-none"
             />
           </div>
@@ -172,9 +193,11 @@ function SiteRegisterForm() {
             </p>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">
-              PDF 업로드 {!isEditMode && "*"}
-            </label>
+            {!isReadOnly && (
+              <label className="text-sm font-medium text-gray-700">
+                PDF 업로드 {!isEditMode && "*"}
+              </label>
+            )}
             {isEditMode && pdfs.length > 0 && (
               <div className="mt-1">
                 <label className="text-sm font-medium text-gray-700">
@@ -196,21 +219,23 @@ function SiteRegisterForm() {
               className="w-full border rounded-lg p-2 mt-1 text-sm"
             />
           </div>
-          <div className="flex justify-center gap-3">
-            {isEditMode && (
+          {!isReadOnly && (
+            <div className="flex justify-center gap-3">
+              {isEditMode && (
+                <button
+                  onClick={handleDelete}
+                  className="px-8 py-3 bg-red-500 text-white rounded-xl text-sm">
+                  삭제
+                </button>
+              )}
               <button
-                onClick={handleDelete}
-                className="px-8 py-3 bg-red-500 text-white rounded-xl text-sm">
-                삭제
+                onClick={handleSubmit}
+                disabled={!name || loading}
+                className="px-8 py-3 bg-blue-500 text-white rounded-xl text-sm">
+                {loading ? "처리 중..." : isEditMode ? "수정하기" : "현장 등록"}
               </button>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={!name || loading}
-              className="px-8 py-3 bg-blue-500 text-white rounded-xl text-sm">
-              {loading ? "처리 중..." : isEditMode ? "수정하기" : "현장 등록"}
-            </button>
-          </div>
+            </div>
+          )}
           {message && (
             <p className="text-center text-sm text-green-600">{message}</p>
           )}
