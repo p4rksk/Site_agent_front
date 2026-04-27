@@ -140,7 +140,7 @@ function SiteRegisterForm() {
         </h1>
       </header>
 
-      <div className="flex-1 p-4 flex justify-center items-start pt-8">
+      <div className="flex-1 p-4 flex justify-center items-start pt-8 overflow-y-auto">
         <div className="bg-white rounded-xl p-6 flex flex-col gap-4 w-full max-w-md">
           <div>
             <label className="text-sm font-medium text-gray-700">
