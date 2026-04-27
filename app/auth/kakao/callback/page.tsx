@@ -21,6 +21,7 @@ function KakaoCallbackInner() {
       .then((data) => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", "USER");
+        window.dispatchEvent(new Event("loginStatusChanged"));
         router.push("/");
       })
       .catch((err) => {

@@ -243,6 +243,7 @@ export default function Home() {
       localStorage.setItem("role", data.role);
       localStorage.setItem("id", data.id);
       localStorage.setItem("companyName", data.companyName);
+      window.dispatchEvent(new Event("loginStatusChanged"));
       setRole(data.role);
       alert(`${data.companyName} 로그인 성공!`);
       setShowLoginPopup(false);
